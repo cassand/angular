@@ -3,7 +3,7 @@ import {CONST_EXPR, isString, isPresent, Json} from 'angular2/src/facade/lang';
 import {BaseException, WrappedException} from 'angular2/src/facade/exceptions';
 import {Headers} from './headers';
 import {ResponseOptions} from './base_response_options';
-import {isJsObject} from './http_utils';
+import {isJsObject, stringToArrayBuffer} from './http_utils';
 
 /**
  * Creates `Response` instances from provided values.
@@ -71,8 +71,10 @@ export class Response {
    * Spec](https://fetch.spec.whatwg.org/#headers-class).
    */
   headers: Headers;
-  // TODO: Support ArrayBuffer, JSON, FormData, Blob
-  private _body: string | Object;
+
+  // TODO: Support FormData, Blob
+  private _body: string | Object | ArrayBuffer;
+
   constructor(responseOptions: ResponseOptions) {
     this._body = responseOptions.body;
     this.status = responseOptions.status;
@@ -83,20 +85,16 @@ export class Response {
   }
 
   /**
-   * Not yet implemented
-   */
-  // TODO: Blob return type
-  blob(): any { throw new BaseException('"blob()" method not implemented on Response superclass'); }
-
-  /**
    * Attempts to return body as parsed `JSON` object, or raises an exception.
    */
   json(): any {
-    var jsonResponse: string | Object;
-    if (isJsObject(this._body)) {
-      jsonResponse = this._body;
-    } else if (isString(this._body)) {
+    var jsonResponse: Object;
+    if (isString(this._body)) {
       jsonResponse = Json.parse(<string>this._body);
+    } else if (this._body instanceof ArrayBuffer) {
+      jsonResponse = Json.parse(this.text());
+    } else {
+      jsonResponse = this._body;
     }
     return jsonResponse;
   }
@@ -104,13 +102,33 @@ export class Response {
   /**
    * Returns the body as a string, presuming `toString()` can be called on the response body.
    */
-  text(): string { return this._body.toString(); }
+  text(): string {
+    var textResponse: string;
+    if (this._body instanceof ArrayBuffer) {
+      textResponse = String.fromCharCode.apply(null, new Uint16Array(<ArrayBuffer>this._body));
+    } else if (isJsObject(this._body)) {
+      textResponse = Json.stringify(this._body);
+    } else {
+      textResponse = this._body.toString();
+    }
+    return textResponse;
+  }
 
+  /**
+   * Return the body as an ArrayBuffer
+   */
+  arrayBuffer(): ArrayBuffer {
+    var bufferResponse: ArrayBuffer;
+    if (this._body instanceof ArrayBuffer) {
+      bufferResponse = <ArrayBuffer>this._body;
+    } else {
+      bufferResponse = stringToArrayBuffer(this.text());
+    }
+    return bufferResponse;
+  }
   /**
    * Not yet implemented
    */
-  // TODO: ArrayBuffer return type
-  arrayBuffer(): any {
-    throw new BaseException('"arrayBuffer()" method not implemented on Response superclass');
-  }
+  // TODO: Blob return type
+  blob(): any { throw new BaseException('"blob()" method not implemented on Response superclass'); }
 }

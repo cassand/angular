@@ -1,4 +1,4 @@
-import {ReadyState, RequestMethod, ResponseType} from './enums';
+import {ReadyState, RequestMethod, ResponseType, ResponseBuffer} from './enums';
 import {Headers} from './headers';
 import {BaseException, WrappedException} from 'angular2/src/facade/exceptions';
 import {EventEmitter} from 'angular2/src/facade/async';
@@ -33,6 +33,7 @@ export interface RequestOptionsArgs {
   headers?: Headers;
   // TODO: Support Blob, ArrayBuffer, JSON, URLSearchParams, FormData
   body?: string;
+  buffer?: ResponseBuffer;
 }
 
 /**
@@ -45,8 +46,8 @@ export interface RequestArgs extends RequestOptionsArgs { url: string; }
  * [ResponseInit](https://fetch.spec.whatwg.org/#responseinit) from the Fetch spec.
  */
 export type ResponseOptionsArgs = {
-  // TODO: Support Blob, ArrayBuffer, JSON
-  body?: string | Object | FormData;
+  // TODO: Support Blob
+  body?: string | Object | FormData | ArrayBuffer;
   status?: number;
   statusText?: string;
   headers?: Headers;

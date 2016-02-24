@@ -9,6 +9,7 @@ import {
   isJsObject,
   StringWrapper
 } from 'angular2/src/facade/lang';
+import {ResponseBuffer} from "./enums";
 
 // TODO(jeffbcross): properly implement body accessors
 /**
@@ -57,6 +58,10 @@ export class Request {
    * {@link Headers} instance
    */
   headers: Headers;
+  /**
+   * Indicate to the browser which {@link ResponseBuffer} must be used
+   */
+  buffer: ResponseBuffer;
   /** Url of the remote resource */
   url: string;
   // TODO: support URLSearchParams | FormData | Blob | ArrayBuffer
@@ -82,6 +87,7 @@ export class Request {
     // Defaults to 'omit', consistent with browser
     // TODO(jeffbcross): implement behavior
     this.headers = new Headers(requestOptions.headers);
+    this.buffer = requestOptions.buffer;
   }
 
 

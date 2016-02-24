@@ -38,3 +38,12 @@ export enum ResponseType {
   Error,
   Opaque
 }
+
+/**
+ * Define which buffer to use to store the response
+ */
+export enum ResponseBuffer {
+  ArrayBuffer,
+  Json,
+  Text
+}

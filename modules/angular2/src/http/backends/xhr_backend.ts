@@ -10,6 +10,7 @@ import {isPresent} from 'angular2/src/facade/lang';
 import {Observable} from 'rxjs/Observable';
 import {Observer} from 'rxjs/Observer';
 import {isSuccess, getResponseURL} from '../http_utils';
+import {ResponseBuffer} from "../enums";
 
 /**
 * Creates connections using `XMLHttpRequest`. Given a fully-qualified
@@ -30,8 +31,11 @@ export class XHRConnection implements Connection {
   constructor(req: Request, browserXHR: BrowserXhr, baseResponseOptions?: ResponseOptions) {
     this.request = req;
     this.response = new Observable((responseObserver: Observer<Response>) => {
+
       let _xhr: XMLHttpRequest = browserXHR.build();
+
       _xhr.open(RequestMethod[req.method].toUpperCase(), req.url);
+
       // load event handler
       let onLoad = () => {
         // responseText is the old-school way of retrieving response (supported by IE8 & 9)
@@ -77,6 +81,19 @@ export class XHRConnection implements Connection {
       if (isPresent(req.headers)) {
         req.headers.forEach((values, name) => _xhr.setRequestHeader(name, values.join(',')));
       }
+
+      // Select the correct buffer type to store the response
+      if (isPresent(req.buffer) && isPresent(_xhr.responseType)) switch (req.buffer) {
+          case ResponseBuffer.ArrayBuffer:
+            _xhr.responseType = "arraybuffer";
+            break;
+          case ResponseBuffer.Json:
+            _xhr.responseType = "json";
+            break;
+          case ResponseBuffer.Text:
+            _xhr.responseType = "text";
+            break;
+        }
 
       _xhr.addEventListener('load', onLoad);
       _xhr.addEventListener('error', onError);

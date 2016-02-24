@@ -29,4 +29,11 @@ export function getResponseURL(xhr: any): string {
   return;
 }
 
+export function stringToArrayBuffer(string: String): ArrayBuffer {
+  let view = new Uint16Array(string.length);
+  for (var i = 0, strLen = string.length; i < strLen; i++) {
+    view[i] = string.charCodeAt(i);
+  }
+  return view.buffer;
+}
 export {isJsObject} from 'angular2/src/facade/lang';

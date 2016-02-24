@@ -21,7 +21,7 @@ import {Headers} from 'angular2/src/http/headers';
 import {Map} from 'angular2/src/facade/collection';
 import {RequestOptions, BaseRequestOptions} from 'angular2/src/http/base_request_options';
 import {BaseResponseOptions, ResponseOptions} from 'angular2/src/http/base_response_options';
-import {ResponseType} from 'angular2/src/http/enums';
+import {ResponseType, ResponseBuffer} from 'angular2/src/http/enums';
 
 var abortSpy: any;
 var sendSpy: any;
@@ -36,6 +36,7 @@ class MockBrowserXHR extends BrowserXhr {
   send: any;
   open: any;
   response: any;
+  responseType: string = "";
   responseText: string;
   setRequestHeader: any;
   callbacks = new Map<string, Function>();
@@ -332,6 +333,34 @@ export function main() {
            existingXHRs[0].setResponseHeaders(responseHeaders);
            existingXHRs[0].setStatusCode(statusCode);
            existingXHRs[0].dispatchEvent('load');
+         }));
+
+      it('should use the correct type of buffer',
+         inject([AsyncTestCompleter], (async: AsyncTestCompleter) => {
+           sampleRequest.buffer = ResponseBuffer.ArrayBuffer;
+           var connection = new XHRConnection(sampleRequest, new MockBrowserXHR(),
+                                              new ResponseOptions({body: new ArrayBuffer(32)}));
+           connection.response.subscribe((res: Response) => {
+             expect(res.arrayBuffer()).toBeAnInstanceOf(ArrayBuffer);
+             async.done();
+           });
+           existingXHRs[0].setStatusCode(200);
+           existingXHRs[0].dispatchEvent('load');
+
+         }));
+
+      it('should throw when access an unallocated buffer',
+         inject([AsyncTestCompleter], (async: AsyncTestCompleter) => {
+           sampleRequest.buffer = ResponseBuffer.ArrayBuffer;
+           var connection =
+               new XHRConnection(sampleRequest, new MockBrowserXHR(), new ResponseOptions());
+           connection.response.subscribe((res: Response) => {
+             expect(res.arrayBuffer).toThrow();
+             async.done();
+           });
+           existingXHRs[0].setStatusCode(200);
+           existingXHRs[0].dispatchEvent('load');
+
          }));
     });
   });

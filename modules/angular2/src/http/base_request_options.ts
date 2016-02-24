@@ -5,6 +5,7 @@ import {RequestOptionsArgs} from './interfaces';
 import {Injectable} from 'angular2/core';
 import {URLSearchParams} from './url_search_params';
 import {normalizeMethodName} from './http_utils';
+import {ResponseBuffer} from "./enums";
 
 /**
  * Creates a request options object to be optionally provided when instantiating a
@@ -43,8 +44,8 @@ export class RequestOptions {
   /**
    * Body to be used when creating a {@link Request}.
    */
-  // TODO: support FormData, Blob, URLSearchParams
-  body: string;
+  // TODO: support FormData, URLSearchParams
+  body: string | ArrayBufferView | Blob;
   /**
    * Url with which to perform a {@link Request}.
    */
@@ -53,7 +54,12 @@ export class RequestOptions {
    * Search parameters to be included in a {@link Request}.
    */
   search: URLSearchParams;
-  constructor({method, headers, body, url, search}: RequestOptionsArgs = {}) {
+  /**
+   * Select a buffer to store response, such as ArrayBuffer, Blob (or Document)
+   */
+  buffer: ResponseBuffer;
+
+  constructor({method, headers, body, url, search, buffer}: RequestOptionsArgs = {}) {
     this.method = isPresent(method) ? normalizeMethodName(method) : null;
     this.headers = isPresent(headers) ? headers : null;
     this.body = isPresent(body) ? body : null;
@@ -61,6 +67,7 @@ export class RequestOptions {
     this.search = isPresent(search) ? (isString(search) ? new URLSearchParams(<string>(search)) :
                                                           <URLSearchParams>(search)) :
                                       null;
+    this.buffer = isPresent(buffer) ? buffer : null;
   }
 
   /**
@@ -97,7 +104,8 @@ export class RequestOptions {
       search: isPresent(options) && isPresent(options.search) ?
                   (isString(options.search) ? new URLSearchParams(<string>(options.search)) :
                                               (<URLSearchParams>(options.search)).clone()) :
-                  this.search
+                  this.search,
+      buffer: isPresent(options) && isPresent(options.buffer) ? options.buffer : this.buffer
     });
   }
 }

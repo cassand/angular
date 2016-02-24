@@ -4,6 +4,7 @@ import {BaseException, WrappedException} from 'angular2/src/facade/exceptions';
 import {Headers} from './headers';
 import {ResponseOptions} from './base_response_options';
 import {isJsObject} from './http_utils';
+import {makeTypeError} from "../facade/exceptions";
 
 /**
  * Creates `Response` instances from provided values.
@@ -71,8 +72,10 @@ export class Response {
    * Spec](https://fetch.spec.whatwg.org/#headers-class).
    */
   headers: Headers;
-  // TODO: Support ArrayBuffer, JSON, FormData, Blob
-  private _body: string | Object;
+
+  // TODO: Support FormData
+  private _body: string | Object | ArrayBuffer | Blob;
+
   constructor(responseOptions: ResponseOptions) {
     this._body = responseOptions.body;
     this.status = responseOptions.status;
@@ -81,12 +84,6 @@ export class Response {
     this.type = responseOptions.type;
     this.url = responseOptions.url;
   }
-
-  /**
-   * Not yet implemented
-   */
-  // TODO: Blob return type
-  blob(): any { throw new BaseException('"blob()" method not implemented on Response superclass'); }
 
   /**
    * Attempts to return body as parsed `JSON` object, or raises an exception.
@@ -107,10 +104,22 @@ export class Response {
   text(): string { return this._body.toString(); }
 
   /**
-   * Not yet implemented
+   * Return the body as an ArrayBuffer, if the right buffer have been selected.
    */
-  // TODO: ArrayBuffer return type
-  arrayBuffer(): any {
-    throw new BaseException('"arrayBuffer()" method not implemented on Response superclass');
+  arrayBuffer(): ArrayBuffer {
+    if (this._body instanceof ArrayBuffer) return <ArrayBuffer>this._body;
+
+    throw "The response is not stored in an ArrayBuffer, please use the option {buffer: ResponseBuffer.ArrayBuffer} in RequestOptions";
+  }
+
+  /**
+   * Return the body as an ArrayBuffer, if the ArrayBuffer or Blob buffer have been selected.
+   */
+  blob(): Blob {
+    if (this._body instanceof Blob) return <Blob>this._body;
+
+    if (this._body instanceof ArrayBuffer) return new Blob([this._body]);
+
+    throw "The response is not stored in a Blob, please use the option {buffer: ResponseBuffer.Blob} in RequestOptions";
   }
 }

@@ -10,6 +10,7 @@ import {isPresent} from 'angular2/src/facade/lang';
 import {Observable} from 'rxjs/Observable';
 import {Observer} from 'rxjs/Observer';
 import {isSuccess, getResponseURL} from '../http_utils';
+import {ResponseBuffer} from "../enums";
 
 /**
 * Creates connections using `XMLHttpRequest`. Given a fully-qualified
@@ -30,8 +31,33 @@ export class XHRConnection implements Connection {
   constructor(req: Request, browserXHR: BrowserXhr, baseResponseOptions?: ResponseOptions) {
     this.request = req;
     this.response = new Observable((responseObserver: Observer<Response>) => {
+
       let _xhr: XMLHttpRequest = browserXHR.build();
+
       _xhr.open(RequestMethod[req.method].toUpperCase(), req.url);
+
+      // Select the correct buffer to store the response
+      if (isPresent(req.buffer)) {
+        if (isPresent(_xhr.responseType)) {
+          switch (req.buffer) {
+            case ResponseBuffer.ArrayBuffer:
+              _xhr.responseType = "arraybuffer";
+              break;
+            case ResponseBuffer.Blob:
+              _xhr.responseType = "blob";
+              break;
+            default:
+              _xhr.responseType = "";
+              break;
+          }
+
+        } else {
+          // IE9 doesn't support responseType
+          // Override the MIME type and let the bytes pass through unprocessed
+          _xhr.overrideMimeType('text\/plain; charset=x-user-defined');
+        }
+      }
+
       // load event handler
       let onLoad = () => {
         // responseText is the old-school way of retrieving response (supported by IE8 & 9)
@@ -58,8 +84,10 @@ export class XHRConnection implements Connection {
         }
         let response = new Response(responseOptions);
         if (isSuccess(status)) {
+          // There is no need to defer response for array buffer, onLoad method guarantee that all
+          // data
+          // have been transferred
           responseObserver.next(response);
-          // TODO(gdi2290): defer complete if array buffer until done
           responseObserver.complete();
           return;
         }
@@ -81,7 +109,7 @@ export class XHRConnection implements Connection {
       _xhr.addEventListener('load', onLoad);
       _xhr.addEventListener('error', onError);
 
-      _xhr.send(this.request.text());
+      _xhr.send(this.request.body);
 
       return () => {
         _xhr.removeEventListener('load', onLoad);

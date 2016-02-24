@@ -9,6 +9,7 @@ import {
   isJsObject,
   StringWrapper
 } from 'angular2/src/facade/lang';
+import {ResponseBuffer} from "./enums";
 
 // TODO(jeffbcross): properly implement body accessors
 /**
@@ -57,10 +58,15 @@ export class Request {
    * {@link Headers} instance
    */
   headers: Headers;
+  /**
+   * Indicate to the browser which {@link ResponseBuffer} to use
+   */
+  buffer: ResponseBuffer;
   /** Url of the remote resource */
   url: string;
-  // TODO: support URLSearchParams | FormData | Blob | ArrayBuffer
-  private _body: string;
+  // TODO: support URLSearchParams | FormData
+  private _body: string | ArrayBufferView | Blob;
+
   constructor(requestOptions: RequestArgs) {
     // TODO: assert that url is present
     let url = requestOptions.url;
@@ -82,6 +88,7 @@ export class Request {
     // Defaults to 'omit', consistent with browser
     // TODO(jeffbcross): implement behavior
     this.headers = new Headers(requestOptions.headers);
+    this.buffer = requestOptions.buffer;
   }
 
 
@@ -91,4 +98,6 @@ export class Request {
    * string.
    */
   text(): String { return isPresent(this._body) ? this._body.toString() : ''; }
+
+  get body() { return isPresent(this._body) ? this._body : ''; }
 }
